@@ -1,0 +1,30 @@
+{{ template "header.html" }}
+<h1>Gyotaku</h1>
+<form action="/new">
+  <div class="row">
+    <div class="col">
+      <div class="form-group">
+        <input class="form-control" name="url" placeholder="http://example.com/">
+      </div>
+    </div>
+    <div class="col-md-auto">
+      <button type="submit" class="btn btn-primary">Send</button>
+    </div>
+  </div>
+  <div class="row">
+    <p>Posted gyotakus are checked by admin</p>
+  </div>
+</form>
+{{ if ne .Session.Message "" }}
+<p>{{ .Session.Message }}</p>
+{{ end }}
+
+{{ if .Session.User.Pages }}
+<h2>Pages</h2>
+<ul>
+  {{ range $i, $item := .Session.User.Pages }}
+  <li><a href="/view/{{ $i }}">{{ $item.Url }}</a></li>
+  {{ end }}
+</ul>
+{{ end }}
+{{ template "footer.html" }}

@@ -1,0 +1,52 @@
+package app
+
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"net/http"
+)
+
+var (
+	Sessions map[string]*Session
+	Pages    chan Page
+)
+
+type Session struct {
+	Token   string
+	User    *User
+	Message string
+}
+
+type User struct {
+	Pages []Page
+}
+
+type Page struct {
+	Url  string
+	Body string
+}
+
+func DBInit() {
+	Sessions = make(map[string]*Session)
+	Pages = make(chan Page, 256)
+}
+
+func NewSession() (*Session, error) {
+	r := make([]byte, 32)
+	if _, err := rand.Read(r); err != nil {
+		return nil, err
+	}
+
+	token := hex.EncodeToString(r)
+
+	return &Session{
+		Token: token,
+		User: &User{
+			Pages: make([]Page, 0),
+		},
+	}, nil
+}
+
+func GetSession(r *http.Request) *Session {
+	return r.Context().Value(SessionKey).(*Session)
+}
