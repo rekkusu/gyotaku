@@ -16,7 +16,7 @@ func SessionMiddleware(next http.Handler) http.Handler {
 		c, err := r.Cookie(SessionCookieName)
 		ctx := r.Context()
 		if err == nil {
-			if session, ok := Sessions[c.Value]; ok {
+			if session, ok := Sessions.Load(c.Value); ok {
 				ctx = context.WithValue(ctx, SessionKey, session)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
@@ -25,8 +25,8 @@ func SessionMiddleware(next http.Handler) http.Handler {
 
 		for {
 			session, _ := NewSession()
-			if _, ok := Sessions[session.Token]; !ok {
-				Sessions[session.Token] = session
+			if _, ok := Sessions.Load(session.Token); !ok {
+				Sessions.Store(session.Token, session)
 				ctx = context.WithValue(ctx, SessionKey, session)
 				http.SetCookie(w, &http.Cookie{
 					Name:  SessionCookieName,

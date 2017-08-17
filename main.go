@@ -34,7 +34,7 @@ func main() {
 		host = "127.0.0.1:9999"
 	}
 
-	crawler.StartCrawler(1)
+	crawler.StartCrawler(8)
 
 	log.Printf("Listening on %s\n", host)
 

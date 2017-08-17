@@ -4,10 +4,12 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"net/http"
+
+	"golang.org/x/sync/syncmap"
 )
 
 var (
-	Sessions map[string]*Session
+	Sessions *syncmap.Map
 	Pages    chan Page
 )
 
@@ -27,7 +29,7 @@ type Page struct {
 }
 
 func DBInit() {
-	Sessions = make(map[string]*Session)
+	Sessions = new(syncmap.Map)
 	Pages = make(chan Page, 256)
 }
 
