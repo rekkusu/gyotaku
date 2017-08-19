@@ -67,9 +67,7 @@ func config() Config {
 		conf.CrawlerJobs = 1
 	}
 
-	if conf.Flag = os.Getenv("FLAG"); conf.Flag == "" {
-		conf.Flag = "FLAG{DummyFlag}"
-	}
+	conf.Flag = app.Flag
 
 	return conf
 }
