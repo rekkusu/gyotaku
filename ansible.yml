@@ -32,6 +32,10 @@
       copy:
         src: ./deploy/crs-setup.conf
         dest: /etc/modsecurity/crs/crs-setup.conf
+    - name: Copying unitfile
+      copy:
+        src: ./deploy/gyotaku.service
+        dest: /etc/systemd/system/gyotaku.service
     - name: Enabling Apache modules
       command: a2enmod security2 proxy proxy_http
       notify: restart apache2
@@ -44,25 +48,22 @@
         dest: /opt/go/src/github.com/rekkusu/gyotaku
         accept_hostkey: yes
         key_file: /home/rex/.ssh/id_rsa
+      notify: gyotaku
     - name: go get ./...
       shell: GOPATH=/opt/go go get ./...
       args:
         chdir: /opt/go/src/github.com/rekkusu/gyotaku
-    - name: Copying unitfile
-      copy:
-        src: ./deploy/gyotaku.service
-        dest: /etc/systemd/system/gyotaku.service
-      notify:
-        - run gyotaku
+      notify: gyotaku
 
   handlers:
     - name: restart apache2
       systemd:
         name: apache2
         state: restarted
-    - name: run gyotaku
+    - name: gyotaku
       systemd:
         name: gyotaku
-        enabled: yes
+        daemon_reload: yes
         state: restarted
+        enabled: yes
 
