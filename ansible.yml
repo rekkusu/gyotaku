@@ -1,0 +1,66 @@
+# Ansible playbook
+- hosts: all
+  remote_user: rex
+  sudo: yes
+  tasks:
+    - name: adding apt repository
+      apt_repository:
+        repo: 'ppa:longsleep/golang-backports'
+    - name: apt install
+      apt: name={{item}} state=present update_cache=yes
+      with_items:
+        - git
+        - curl
+        - golang-go
+        - apache2
+        - apache2-utils
+        - libapache2-mod-security2
+        - chromium-browser
+    - name: Cloning ModSecurity Core Rule Set
+      git:
+        repo: https://github.com/SpiderLabs/owasp-modsecurity-crs.git
+        dest: /etc/modsecurity/crs
+    - name: Copying apache2.conf
+      copy:
+        src: ./deploy/apache2.conf
+        dest: /etc/apache2/apache2.conf
+    - name: Copying modsecurity.conf
+      copy:
+        src: ./deploy/modsecurity.conf
+        dest: /etc/modsecurity/modsecurity.conf
+    - name: Copying crs-setup.conf
+      copy:
+        src: ./deploy/crs-setup.conf
+        dest: /etc/modsecurity/crs/crs-setup.conf
+    - name: Enabling Apache modules
+      command: a2enmod security2 proxy proxy_http
+      notify: restart apache2
+    - name: Disabling 000-default
+      command: a2dissite 000-default
+      notify: restart apache2
+    - name: Deploying gyotaku
+      copy: 
+        src: ./
+        dest: /opt/go/src/github.com/rekkusu/gyotaku
+    - name: go get ./...
+      shell: GOPATH=/opt/go go get ./...
+      args:
+        chdir: /opt/go/src/github.com/rekkusu/gyotaku
+    - name: Copying unitfile
+      copy:
+        src: ./deploy/gyotaku.service
+        dest: /etc/systemd/system/gyotaku.service
+      notify:
+        - run gyotaku
+
+  handlers:
+    - name: restart apache2
+      systemd:
+        name: apache2
+        state: restarted
+    - name: run gyotaku
+      systemd:
+        name: gyotaku
+        enabled: yes
+        state: restarted
+

@@ -18,6 +18,7 @@ import (
 const CrawlURL = "http://127.0.0.1:9999/admin_53cr37api/"
 
 var (
+	ChromePath string
 	CrawlQueue chan interface{} = make(chan interface{}, 256)
 	pool       chan *worker
 )
@@ -82,10 +83,10 @@ func (w *worker) Run() {
 	dt := devtool.New(fmt.Sprintf("http://127.0.0.1:%d", w.port))
 	pt, err := dt.Get(ctx, devtool.Page)
 	if err != nil {
-		log.Println(err)
+		log.Println(1, err)
 		pt, err = dt.Create(ctx)
 		if err != nil {
-			log.Println(err)
+			log.Println(2, err)
 			return
 		}
 	}
@@ -101,7 +102,7 @@ func (w *worker) Run() {
 
 	domContent, err := c.Page.DOMContentEventFired(ctx)
 	if err != nil {
-		log.Println(err)
+		log.Println(4, err)
 	}
 	defer domContent.Close()
 

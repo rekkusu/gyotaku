@@ -1,0 +1,16 @@
+[Unit]
+Description=Gyotaku
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/go run main.go
+Restart=always
+WorkingDirectory=/opt/go/src/github.com/rekkusu/gyotaku
+Environment=GOPATH=/opt/go
+Environment=LISTEN=127.0.0.1:9999
+Environment=CHROME=/usr/bin/chromium-browser
+Environment=CRAWLER_JOBS=4
+
+
+[Install]
+WantedBy=multi-user.target
