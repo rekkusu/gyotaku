@@ -6,21 +6,16 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"goji.io/pat"
 
 	goji "goji.io"
 
-	"github.com/okzk/stats"
 	"github.com/rekkusu/gyotaku/app"
 	"github.com/rekkusu/gyotaku/crawler"
 )
 
 func main() {
-	t := stats.SchedulePeriodically(5*time.Second, func(s *stats.Stats) { log.Println(s.NumGoroutine) })
-	defer t.Stop()
-
 	mux := goji.NewMux()
 	app.DBInit()
 
