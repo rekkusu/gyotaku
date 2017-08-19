@@ -20,7 +20,6 @@ func main() {
 	app.DBInit()
 
 	mux.Use(app.SessionMiddleware)
-	//mux.Use(app.LoggerMiddleware)
 
 	handler := &app.Handler{
 		Template: template.Must(template.New("templates").ParseGlob("templates/*.html")),
@@ -29,7 +28,9 @@ func main() {
 	mux.HandleFunc(pat.New("/"), handler.Index)
 	mux.HandleFunc(pat.New("/new"), handler.NewPage)
 	mux.HandleFunc(pat.Get("/view/:id"), handler.View)
-	mux.HandleFunc(pat.Get("/admin_53cr37api/:id"), handler.Admin)
+
+	// For crawlers
+	mux.HandleFunc(pat.Get(app.SecretURL), handler.Admin)
 
 	conf := config()
 
