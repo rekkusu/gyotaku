@@ -36,6 +36,7 @@
       copy:
         src: ./deploy/gyotaku.service
         dest: /etc/systemd/system/gyotaku.service
+      notify: gyotaku-reload
     - name: Enabling Apache modules
       command: a2enmod security2 proxy proxy_http
       notify: restart apache2
@@ -60,10 +61,13 @@
       systemd:
         name: apache2
         state: restarted
-    - name: gyotaku
+    - name: gyotaku-reload
       systemd:
         name: gyotaku
         daemon_reload: yes
+    - name: gyotaku
+      systemd:
+        name: gyotaku
         state: restarted
         enabled: yes
 
