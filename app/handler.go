@@ -1,13 +1,13 @@
 package app
 
 import (
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/rekkusu/gyotaku/crawler"
+
 	"goji.io/pat"
 )
 
@@ -32,25 +32,28 @@ func (h *Handler) NewPage(w http.ResponseWriter, r *http.Request) {
 	session := GetSession(r)
 	url := r.FormValue("url")
 
-	body := GetWebPage(url)
-
-	if len([]rune(body)) > 4096 {
-		body = string([]rune(body)[:4096])
-	}
-
-	page := Page{
+	page := &Page{
 		Url:  url,
-		Body: body,
+		Body: "Loading",
 	}
 
 	go func() {
-		Pages <- page
-		crawler.CrawlQueue <- struct{}{}
+		body := GetWebPage(url)
+
+		if len([]rune(body)) > 8192 {
+			body = string([]rune(body)[:8192])
+		}
+
+		page.Body = body
+
+		Pages = append(Pages, page)
+		crawler.CrawlQueue <- len(Pages) - 1
 	}()
 
 	session.Message = "Added"
 	session.User.Pages = append(session.User.Pages, page)
-	http.Redirect(w, r, fmt.Sprintf("/view/%d", len(session.User.Pages)-1), http.StatusFound)
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (h *Handler) View(w http.ResponseWriter, r *http.Request) {
@@ -89,6 +92,12 @@ func (h *Handler) View(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 	session := GetSession(r)
+	id, err := strconv.Atoi(pat.Param(r, "id"))
+
+	if err != nil {
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
 
 	var tpl struct {
 		Session *Session
@@ -99,12 +108,9 @@ func (h *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 	tpl.Session = session
 	tpl.Url = template.HTML("Not Found")
 
-	select {
-	case p := <-Pages:
-		tpl.Body = p.Body
-		tpl.Url = template.HTML(p.Url)
-	default:
-	}
+	p := Pages[id]
+	tpl.Body = p.Body
+	tpl.Url = template.HTML(p.Url)
 
 	h.Template.ExecuteTemplate(w, "view.html", tpl)
 }

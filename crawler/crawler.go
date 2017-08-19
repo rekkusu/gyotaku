@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os/exec"
@@ -15,25 +16,29 @@ import (
 	"golang.org/x/net/context"
 )
 
-const CrawlURL = "http://127.0.0.1:9999/admin_53cr37api/"
+const (
+	CrawlURL = "http://127.0.0.1:9999/admin_53cr37api/"
+	NewURL   = "http://127.0.0.1:9999/new"
+)
 
 var (
 	ChromePath string
-	CrawlQueue chan interface{} = make(chan interface{}, 256)
+	Flag       string
+	CrawlQueue chan int = make(chan int, 256)
 	pool       chan *worker
 )
 
 type worker struct {
 	port int
 	quit chan interface{}
-	data chan interface{}
+	data chan int
 }
 
 func NewWorker(port int) *worker {
 	return &worker{
 		port: port,
 		quit: make(chan interface{}),
-		data: make(chan interface{}),
+		data: make(chan int),
 	}
 }
 
@@ -44,8 +49,8 @@ func StartCrawler(thread int) {
 	go func() {
 		for {
 			select {
-			case <-CrawlQueue:
-				(<-pool).data <- struct{}{}
+			case id := <-CrawlQueue:
+				(<-pool).data <- id
 			}
 		}
 	}()
@@ -59,7 +64,8 @@ func StartCrawler(thread int) {
 
 func (w *worker) Start() {
 	ctx, _ := context.WithCancel(context.Background())
-	cmd := exec.CommandContext(ctx, "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "--headless", "--disable-gpu", "--remote-debugging-port="+strconv.Itoa(w.port))
+	flagUrl := fmt.Sprintf("%s?url=%s", NewURL, Flag)
+	cmd := exec.CommandContext(ctx, ChromePath, "--headless", "--disable-gpu", "--no-referrers", "--remote-debugging-port="+strconv.Itoa(w.port), flagUrl)
 	cmd.Start()
 
 	go func() {
@@ -67,8 +73,8 @@ func (w *worker) Start() {
 			pool <- w
 
 			select {
-			case <-w.data:
-				w.Run()
+			case id := <-w.data:
+				w.Run(id)
 			case <-w.quit:
 				return
 			}
@@ -76,43 +82,82 @@ func (w *worker) Start() {
 	}()
 }
 
-func (w *worker) Run() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (w *worker) Run(id int) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	dt := devtool.New(fmt.Sprintf("http://127.0.0.1:%d", w.port))
-	pt, err := dt.Get(ctx, devtool.Page)
-	if err != nil {
-		log.Println(1, err)
-		pt, err = dt.Create(ctx)
+	finish := make(chan interface{})
+
+	go func() {
+		dt := devtool.New(fmt.Sprintf("http://127.0.0.1:%d", w.port))
+		pt, err := w.getTarget(ctx, dt)
 		if err != nil {
-			log.Println(2, err)
+			log.Println(err)
 			return
 		}
+
+		conn, err := rpcc.DialContext(ctx, pt.WebSocketDebuggerURL)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer conn.Close()
+
+		c := cdp.NewClient(conn)
+
+		domContent, err := c.Page.DOMContentEventFired(ctx)
+		if err != nil {
+			log.Println(err)
+		}
+		defer domContent.Close()
+
+		if err = c.Page.Enable(ctx); err != nil {
+			log.Println(err)
+		}
+
+		url := fmt.Sprintf("%s%d", CrawlURL, id)
+		c.Page.Navigate(ctx, page.NewNavigateArgs(url))
+
+		domContent.Recv()
+
+		finish <- struct{}{}
+	}()
+
+	select {
+	case <-finish:
+	case <-ctx.Done():
 	}
+}
 
-	conn, err := rpcc.DialContext(ctx, pt.WebSocketDebuggerURL)
-	if err != nil {
-		log.Println(err)
-		return
+func (w *worker) getTarget(ctx context.Context, dt *devtool.DevTools) (*devtool.Target, error) {
+	targetCh := make(chan *devtool.Target)
+
+	go func() {
+		for i := 0; i < 3; i++ {
+			pt, err := dt.Get(ctx, devtool.Page)
+			if err != nil {
+				log.Println(err)
+				pt, err = dt.Create(ctx)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+			}
+
+			if pt.WebSocketDebuggerURL != "" {
+				targetCh <- pt
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}()
+
+	select {
+	case t := <-targetCh:
+		return t, nil
+	case <-ctx.Done():
+		return nil, errors.New("timeout")
 	}
-	defer conn.Close()
-
-	c := cdp.NewClient(conn)
-
-	domContent, err := c.Page.DOMContentEventFired(ctx)
-	if err != nil {
-		log.Println(4, err)
-	}
-	defer domContent.Close()
-
-	if err = c.Page.Enable(ctx); err != nil {
-		log.Println(err)
-	}
-
-	c.Page.Navigate(ctx, page.NewNavigateArgs(CrawlURL))
-
-	domContent.Recv()
 }
 
 func (w *worker) Stop() {

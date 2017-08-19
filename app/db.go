@@ -10,7 +10,7 @@ import (
 
 var (
 	Sessions *syncmap.Map
-	Pages    chan Page
+	Pages    []*Page
 )
 
 type Session struct {
@@ -20,7 +20,7 @@ type Session struct {
 }
 
 type User struct {
-	Pages []Page
+	Pages []*Page
 }
 
 type Page struct {
@@ -30,7 +30,6 @@ type Page struct {
 
 func DBInit() {
 	Sessions = new(syncmap.Map)
-	Pages = make(chan Page, 256)
 }
 
 func NewSession() (*Session, error) {
@@ -44,7 +43,7 @@ func NewSession() (*Session, error) {
 	return &Session{
 		Token: token,
 		User: &User{
-			Pages: make([]Page, 0),
+			Pages: make([]*Page, 0),
 		},
 	}, nil
 }

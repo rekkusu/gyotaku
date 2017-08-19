@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log"
 	"net/http"
 
 	"golang.org/x/net/context"
@@ -37,5 +38,12 @@ func SessionMiddleware(next http.Handler) http.Handler {
 			}
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func LoggerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.URL.RequestURI())
+		next.ServeHTTP(w, r)
 	})
 }
