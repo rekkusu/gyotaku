@@ -1,0 +1,27 @@
+language: go
+
+branches:
+  only:
+    - "/^v?[0-9\\.]+/"
+    - travis-test
+
+env:
+  - BUILD_CC=gcc
+    BUILD_GOOS=linux
+    BUILD_GOARCH=amd64
+
+go:
+  - 1.8.x
+
+script:
+  - go build github.com/rekkusu/gyotaku
+  - mv gyotaku gyotaku-${BUILD_GOOS}-${BUILD_GOARCH}
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  file:
+    - "gyotaku-${BUILD_GOOS}-${BUILD_GOARCH}"
+  skip_cleanup: true
+  on:
+    tags: true
