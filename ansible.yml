@@ -39,9 +39,11 @@
       command: a2dissite 000-default
       notify: restart apache2
     - name: Deploying gyotaku
-      copy: 
-        src: ./
+      git: 
+        repo: git@github.com:rekkusu/gyotaku.git
         dest: /opt/go/src/github.com/rekkusu/gyotaku
+        accept_hostkey: yes
+        key_file: /home/rex/.ssh/id_rsa
     - name: go get ./...
       shell: GOPATH=/opt/go go get ./...
       args:
