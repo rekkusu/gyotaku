@@ -16,11 +16,7 @@ func GetWebPage(url string) string {
 	var cmd *exec.Cmd
 	go func() {
 		cmd = exec.CommandContext(ctx, "curl", "-s", "-S", "-L", "-c", "/dev/null", "-m", "3", url)
-		stdout, err := cmd.CombinedOutput()
-		if err != nil {
-			errch <- err
-			return
-		}
+		stdout, _ := cmd.CombinedOutput()
 		output <- string(stdout)
 	}()
 
