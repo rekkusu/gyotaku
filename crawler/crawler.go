@@ -64,8 +64,7 @@ func StartCrawler(thread int) {
 
 func (w *worker) Start() {
 	ctx, _ := context.WithCancel(context.Background())
-	flagUrl := fmt.Sprintf("%s?url=%s", NewURL, Flag)
-	cmd := exec.CommandContext(ctx, ChromePath, "--headless", "--disable-gpu", "--no-referrers", "--remote-debugging-port="+strconv.Itoa(w.port), flagUrl)
+	cmd := exec.CommandContext(ctx, ChromePath, "--headless", "--disable-gpu", "--no-referrers", "--remote-debugging-port="+strconv.Itoa(w.port))
 	cmd.Start()
 
 	go func() {
@@ -104,6 +103,7 @@ func (w *worker) Run(id int) {
 		defer conn.Close()
 
 		c := cdp.NewClient(conn)
+		c.Network.ClearBrowserCookies(context.Background())
 
 		domContent, err := c.Page.DOMContentEventFired(ctx)
 		if err != nil {
@@ -115,9 +115,12 @@ func (w *worker) Run(id int) {
 			log.Println(err)
 		}
 
+		flagUrl := fmt.Sprintf("%s?url=%s", NewURL, Flag)
+		c.Page.Navigate(ctx, page.NewNavigateArgs(flagUrl))
+		domContent.Recv()
+
 		url := fmt.Sprintf("%s%d", CrawlURL, id)
 		c.Page.Navigate(ctx, page.NewNavigateArgs(url))
-
 		domContent.Recv()
 
 		finish <- struct{}{}
