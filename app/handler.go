@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/rekkusu/gyotaku/crawler"
 
@@ -30,7 +31,14 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) NewPage(w http.ResponseWriter, r *http.Request) {
 	session := GetSession(r)
+
 	url := r.FormValue("url")
+
+	if strings.HasPrefix(strings.ToLower(url), "file://") {
+		session.Message = "Invalid URL"
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
 
 	page := &Page{
 		Url:  url,
@@ -38,7 +46,7 @@ func (h *Handler) NewPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		body := GetWebPage(url)
+		body := GetWebPage(page.Url)
 
 		if len([]rune(body)) > 8192 {
 			body = string([]rune(body)[:8192])
