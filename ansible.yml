@@ -48,6 +48,7 @@
         repo: git@github.com:rekkusu/gyotaku.git
         dest: /opt/go/src/github.com/rekkusu/gyotaku
         accept_hostkey: yes
+        force: yes
         key_file: /home/rex/.ssh/id_rsa
       notify: gyotaku
     - name: go get ./...
@@ -55,6 +56,23 @@
       args:
         chdir: /opt/go/src/github.com/rekkusu/gyotaku
       notify: gyotaku
+    - name: go get go-bindata
+      shell: GOPATH=/opt/go go get -u github.com/jteeuwen/go-bindata/...
+      notify: gyotaku
+    - name: go-bindata
+      shell: GOPATH=/opt/go /opt/go/bin/go-bindata -prefix templates ./templates/
+      args:
+        chdir: /opt/go/src/github.com/rekkusu/gyotaku
+      notify: gyotaku
+    - name: go build
+      shell: GOPATH=/opt/go go build github.com/rekkusu/gyotaku
+      args:
+        chdir: /opt
+      notify: gyotaku
+    - name: cleanup gopath
+      file:
+        path: /opt/go
+        state: absent
 
   handlers:
     - name: restart apache2

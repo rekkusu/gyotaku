@@ -3,12 +3,11 @@ Description=Gyotaku
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/go run main.go
+ExecStart=/opt/gyotaku
 Restart=always
 User=nobody
 Group=nogroup
-WorkingDirectory=/opt/go/src/github.com/rekkusu/gyotaku
-Environment=GOPATH=/opt/go
+WorkingDirectory=/opt
 Environment=LISTEN=127.0.0.1:9999
 Environment=CHROME=/usr/bin/chromium-browser
 Environment=CRAWLER_JOBS=4
