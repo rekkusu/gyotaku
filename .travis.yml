@@ -13,8 +13,12 @@ env:
 go:
   - 1.8.x
 
+before_script:
+  - go get -u github.com/jteeuwen/go-bindata/...
+  - go-bindata -prefix templates ./templates/
+
 script:
-  - go build github.com/rekkusu/gyotaku
+  - CC=$BUILD_CC GOOS=$BUILD_GOOS GOARCH=$BUILD_GOARCH go build github.com/rekkusu/gyotaku
   - mv gyotaku gyotaku-${BUILD_GOOS}-${BUILD_GOARCH}
 
 deploy:

@@ -22,7 +22,11 @@ func main() {
 	mux.Use(app.SessionMiddleware)
 
 	handler := &app.Handler{
-		Template: template.Must(template.New("templates").ParseGlob("templates/*.html")),
+		Template: template.New("templates"),
+	}
+
+	for _, name := range AssetNames() {
+		handler.Template.New(name).Parse(string(MustAsset(name)))
 	}
 
 	mux.HandleFunc(pat.New("/"), handler.Index)
