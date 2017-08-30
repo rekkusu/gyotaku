@@ -20,7 +20,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 
-	session := GetSession(r)
+	session := GetDefaultSession(r)
 	h.Template.ExecuteTemplate(w, "index.html", struct {
 		Session *Session
 	}{
@@ -30,7 +30,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) NewPage(w http.ResponseWriter, r *http.Request) {
-	session := GetSession(r)
+	session := GetDefaultSession(r)
 	url := r.PostFormValue("url")
 
 	if strings.HasPrefix(strings.ToLower(url), "file:") {
@@ -40,9 +40,11 @@ func (h *Handler) NewPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	page := &Page{
-		Url:  url,
-		Body: "Loading",
+		SessionID: session.Token,
+		Url:       url,
+		Body:      "Now loading...",
 	}
+	CreatePage(page)
 
 	go func() {
 		body := GetWebPage(page.Url)
@@ -52,20 +54,20 @@ func (h *Handler) NewPage(w http.ResponseWriter, r *http.Request) {
 		}
 
 		page.Body = body
+		SavePage(page)
 
-		Pages = append(Pages, page)
-		crawler.CrawlQueue <- len(Pages) - 1
+		//Pages = append(Pages, page)
+		crawler.CrawlQueue <- page.Id
 	}()
 
 	session.Message = "Added"
-	session.User.Pages = append(session.User.Pages, page)
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (h *Handler) View(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(pat.Param(r, "id"))
-	session := GetSession(r)
+	session := GetDefaultSession(r)
 
 	var tpl struct {
 		Session *Session
@@ -84,13 +86,13 @@ func (h *Handler) View(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if id >= len(session.User.Pages) || id < 0 {
+	if id >= len(session.Pages) || id < 0 {
 		w.WriteHeader(http.StatusNotFound)
 		h.Template.ExecuteTemplate(w, "view.html", tpl)
 		return
 	}
 
-	page := session.User.Pages[id]
+	page := session.Pages[id]
 	tpl.Url = template.HTML(page.Url)
 	tpl.Body = page.Body
 
@@ -98,7 +100,7 @@ func (h *Handler) View(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Admin(w http.ResponseWriter, r *http.Request) {
-	session := GetSession(r)
+	session := GetDefaultSession(r)
 	id, err := strconv.Atoi(pat.Param(r, "id"))
 
 	if err != nil {
@@ -115,7 +117,11 @@ func (h *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 	tpl.Session = session
 	tpl.Url = template.HTML("Not Found")
 
-	p := Pages[id]
+	p, err := GetPage(id)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	tpl.Body = p.Body
 	tpl.Url = template.HTML(p.Url)
 

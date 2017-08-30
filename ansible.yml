@@ -69,6 +69,11 @@
       args:
         chdir: /opt
       notify: gyotaku
+    - name: initialize database file
+      file:
+        path: /opt/fbf04f53a0915945a74e9b7d5d2451c8.sqlite
+        state: touch
+        mode: 0777
     - name: cleanup gopath
       file:
         path: /opt/go

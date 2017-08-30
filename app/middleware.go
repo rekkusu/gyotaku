@@ -15,29 +15,30 @@ const (
 func SessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie(SessionCookieName)
-		ctx := r.Context()
+		var token string
 		if err == nil {
-			if session, ok := Sessions.Load(c.Value); ok {
-				ctx = context.WithValue(ctx, SessionKey, session)
-				next.ServeHTTP(w, r.WithContext(ctx))
-				return
+			token = c.Value
+		}
+		ctx := r.Context()
+
+		var session *Session
+		if session, err = GetSession(token); err != nil {
+			session, err = NewSession()
+			if err != nil {
+				panic(err)
 			}
+			http.SetCookie(w, &http.Cookie{
+				Name:  SessionCookieName,
+				Value: session.Token,
+				Path:  "/",
+			})
 		}
 
-		for {
-			session, _ := NewSession()
-			if _, ok := Sessions.Load(session.Token); !ok {
-				Sessions.Store(session.Token, session)
-				ctx = context.WithValue(ctx, SessionKey, session)
-				http.SetCookie(w, &http.Cookie{
-					Name:  SessionCookieName,
-					Value: session.Token,
-					Path:  "/",
-				})
-				break
-			}
-		}
+		ctx = context.WithValue(ctx, SessionKey, session)
+
 		next.ServeHTTP(w, r.WithContext(ctx))
+
+		SaveSession(session)
 	})
 }
 

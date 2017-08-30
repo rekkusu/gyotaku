@@ -19,10 +19,10 @@
 <p>{{ .Session.Message }}</p>
 {{ end }}
 
-{{ if .Session.User.Pages }}
+{{ if .Session.Pages }}
 <h2>Pages</h2>
 <ul>
-  {{ range $i, $item := .Session.User.Pages }}
+  {{ range $i, $item := .Session.Pages }}
   <li><a href="/view/{{ $i }}">{{ $item.Url }}</a></li>
   {{ end }}
 </ul>
