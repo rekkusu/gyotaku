@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/rekkusu/gyotaku/crawler"
+	"github.com/rekkusu/gyotaku/secret"
 
 	"goji.io/pat"
 )
@@ -31,6 +32,13 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) NewPage(w http.ResponseWriter, r *http.Request) {
 	session := GetDefaultSession(r)
+
+	if session.Token == secret.AdminToken {
+		session.Message = "Admin cannot post a gyotaku"
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+
 	url := r.PostFormValue("url")
 
 	if strings.HasPrefix(strings.ToLower(url), "file:") {

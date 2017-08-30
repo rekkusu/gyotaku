@@ -34,12 +34,11 @@ func main() {
 	mux.HandleFunc(pat.Get("/view/:id"), handler.View)
 
 	// For crawlers
-	mux.HandleFunc(pat.Get(app.SecretURL), handler.Admin)
+	mux.HandleFunc(pat.Get("/admin_53cr37api/:id"), handler.Admin)
 
 	conf := config()
 
 	crawler.ChromePath = conf.Chrome
-	crawler.Flag = conf.Flag
 	crawler.StartCrawler(conf.CrawlerJobs)
 
 	log.Printf("Listening on %s\n", conf.Listen)
@@ -71,8 +70,6 @@ func config() Config {
 	} else {
 		conf.CrawlerJobs = 1
 	}
-
-	conf.Flag = app.Flag
 
 	return conf
 }

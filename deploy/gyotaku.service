@@ -5,8 +5,8 @@ Description=Gyotaku
 Type=simple
 ExecStart=/opt/gyotaku
 Restart=always
-User=nobody
-Group=nogroup
+User=gyotaku
+Group=gyotaku
 WorkingDirectory=/opt
 Environment=LISTEN=127.0.0.1:9999
 Environment=CHROME=/usr/bin/chromium-browser

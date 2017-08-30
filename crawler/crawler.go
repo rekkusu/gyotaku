@@ -10,15 +10,17 @@ import (
 
 	"github.com/mafredri/cdp"
 	"github.com/mafredri/cdp/devtool"
+	"github.com/mafredri/cdp/protocol/network"
 	"github.com/mafredri/cdp/protocol/page"
 	"github.com/mafredri/cdp/rpcc"
+	"github.com/rekkusu/gyotaku/secret"
 
 	"golang.org/x/net/context"
 )
 
 const (
+	BaseURL  = "http://127.0.0.1:9999/"
 	CrawlURL = "http://127.0.0.1:9999/admin_53cr37api/"
-	NewURL   = "http://127.0.0.1:9999/new"
 )
 
 var (
@@ -64,7 +66,7 @@ func StartCrawler(thread int) {
 
 func (w *worker) Start() {
 	ctx, _ := context.WithCancel(context.Background())
-	cmd := exec.CommandContext(ctx, ChromePath, "--headless", "--disable-gpu", "--no-referrers", "--remote-debugging-port="+strconv.Itoa(w.port))
+	cmd := exec.CommandContext(ctx, ChromePath, "--headless", "--disable-gpu", "--no-referrers", "--remote-debugging-port="+strconv.Itoa(w.port), "http://127.0.0.1:9999/")
 	cmd.Start()
 
 	go func() {
@@ -103,7 +105,13 @@ func (w *worker) Run(id int) {
 		defer conn.Close()
 
 		c := cdp.NewClient(conn)
-		c.Network.ClearBrowserCookies(context.Background())
+		c.Network.ClearBrowserCookies(ctx)
+		cookie := network.NewSetCookieArgs("session", secret.AdminToken).SetURL(BaseURL)
+		_, err = c.Network.SetCookie(ctx, cookie)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 
 		domContent, err := c.Page.DOMContentEventFired(ctx)
 		if err != nil {
@@ -114,10 +122,6 @@ func (w *worker) Run(id int) {
 		if err = c.Page.Enable(ctx); err != nil {
 			log.Println(err)
 		}
-
-		flagUrl := fmt.Sprintf("%s?url=%s", NewURL, Flag)
-		c.Page.Navigate(ctx, page.NewNavigateArgs(flagUrl))
-		domContent.Recv()
 
 		url := fmt.Sprintf("%s%d", CrawlURL, id)
 		c.Page.Navigate(ctx, page.NewNavigateArgs(url))

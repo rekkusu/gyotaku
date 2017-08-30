@@ -7,6 +7,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rekkusu/gyotaku/secret"
 
 	"golang.org/x/sync/syncmap"
 )
@@ -40,6 +41,19 @@ func DBInit() {
 
 	db.AutoMigrate(&Session{}, &Page{})
 	db.CreateTable(&Session{}, &Page{})
+
+	// Admin User
+	admin := &Session{
+		Token: secret.AdminToken,
+		Pages: []Page{
+			Page{
+				SessionID: secret.AdminToken,
+				Url:       secret.Flag,
+			},
+		},
+	}
+
+	db.Create(admin)
 }
 
 func NewSession() (*Session, error) {

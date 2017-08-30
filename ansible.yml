@@ -43,6 +43,10 @@
     - name: Disabling 000-default
       command: a2dissite 000-default
       notify: restart apache2
+    - name: gyotaku user
+      user:
+        name: gyotaku
+        groups: gyotaku
     - name: Deploying gyotaku
       git: 
         repo: git@github.com:rekkusu/gyotaku.git
@@ -71,9 +75,10 @@
       notify: gyotaku
     - name: initialize database file
       file:
-        path: /opt/fbf04f53a0915945a74e9b7d5d2451c8.sqlite
-        state: touch
-        mode: 0777
+        path: /opt
+        owner: gyotaku
+        group: gyotaku
+        mode: 0755
     - name: cleanup gopath
       file:
         path: /opt/go
