@@ -29,8 +29,8 @@ func main() {
 		handler.Template.New(name).Parse(string(MustAsset(name)))
 	}
 
-	mux.HandleFunc(pat.New("/"), handler.Index)
-	mux.HandleFunc(pat.New("/new"), handler.NewPage)
+	mux.HandleFunc(pat.Get("/"), handler.Index)
+	mux.HandleFunc(pat.Post("/new"), handler.NewPage)
 	mux.HandleFunc(pat.Get("/view/:id"), handler.View)
 
 	// For crawlers

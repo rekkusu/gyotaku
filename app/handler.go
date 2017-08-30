@@ -31,8 +31,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) NewPage(w http.ResponseWriter, r *http.Request) {
 	session := GetSession(r)
-
-	url := r.FormValue("url")
+	url := r.PostFormValue("url")
 
 	if strings.HasPrefix(strings.ToLower(url), "file:") {
 		session.Message = "Invalid URL"
