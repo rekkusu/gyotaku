@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/rekkusu/gyotaku/crawler"
 	"github.com/rekkusu/gyotaku/secret"
@@ -40,12 +39,6 @@ func (h *Handler) NewPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := r.PostFormValue("url")
-
-	if strings.HasPrefix(strings.ToLower(url), "file:") {
-		session.Message = "Invalid URL"
-		http.Redirect(w, r, "/", http.StatusFound)
-		return
-	}
 
 	page := &Page{
 		SessionID: session.Token,
