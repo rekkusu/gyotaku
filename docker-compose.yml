@@ -1,13 +1,9 @@
-version: '2'
+version: '3'
 
 services:
-  proxy:
-    build: ./deploy/proxy
-    ports:
-      - 10080:80
   gyotaku:
     build: .
     environment:
-      LISTEN: 0.0.0.0:9999
-    expose:
-      - 9999
+      CRAWLER_JOBS: 4
+    ports:
+      - 8080:80

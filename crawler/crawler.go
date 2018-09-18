@@ -66,7 +66,7 @@ func StartCrawler(thread int) {
 
 func (w *worker) Start() {
 	ctx, _ := context.WithCancel(context.Background())
-	cmd := exec.CommandContext(ctx, ChromePath, "--headless", "--disable-gpu", "--no-referrers", "--remote-debugging-port="+strconv.Itoa(w.port), "http://127.0.0.1:9999/")
+	cmd := exec.CommandContext(ctx, ChromePath, "--headless", "--disable-gpu", "--no-sandbox", "--no-referrers", "--remote-debugging-port="+strconv.Itoa(w.port), "http://127.0.0.1:9999/")
 	cmd.Start()
 
 	go func() {
